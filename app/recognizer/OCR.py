@@ -55,7 +55,7 @@ class OCR:
                 self.results[field] = text
             return self.results
         except Exception as e:
-            return "Thông tin trích xuất hiện không đủ. Vui lòng thử lại sau."
+            return {"status": "Thông tin trích xuất hiện không đủ. Vui lòng thử lại sau."}
     
 if __name__ == "__main__":
     proccessingImage = ProccessingImage()

@@ -1,76 +1,76 @@
-from ultralytics import YOLO
-import torch
+from PyQt6.uic import load_ui
+from PyQt6.QtWidgets import QApplication
+
 import cv2
+import os
+from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtCore import QTimer
 
-from app.utils.pre_proccessing import ProccessingImage
-from app.recognizer.OCR import OCR
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
-def main():
-    model = YOLO(r"model\best_detection_cccd.pt")
-    cam = cv2.VideoCapture(r"rtsp://192.168.1.9:8080/h264.sdp")
-    proccessingImage = ProccessingImage()
-    ocr = OCR()
-    img_path = "temp/temp.jpg"
-
-    frame_count = 0
-    skip = 30
-
-    while True:
-        ret, frame = cam.read()
-        if not ret:
-            break
-
-        frame_count += 1
-
-        if frame_count % skip == 0:
-            results = model.predict(frame, device=device, conf=0.8)
-
-            if not results or len(results[0].boxes) == 0:
-                print("Cannot detection.")
-                continue
-            try:
-                for result in results:
-                    xyxy = result.boxes.xyxy.cpu().numpy()
-                    top_x = int(xyxy[0][0])
-                    top_y = int(xyxy[0][1])
-                    bottom_x = int(xyxy[0][2])
-                    bottom_y = int(xyxy[0][3])
-
-                    fix_top_x, fix_bottom_x, fix_top_y, fix_bottom_y = top_x - 50, bottom_x + 50, top_y - 50, bottom_y + 50
-
-                    if all(v >= 0 for v in [fix_top_x, fix_bottom_x, fix_top_y, fix_bottom_y]):
-                        cropped_image = frame[fix_top_y:fix_bottom_y, fix_top_x:fix_bottom_x]    
-                    else:
-                        cropped_image = frame[top_y:bottom_y, top_x:bottom_x]    
-
-                    # Xoay ảnh 90 độ theo chiều kim đồng hồ
-                    cropped_image = cv2.rotate(cropped_image, cv2.ROTATE_90_CLOCKWISE)
-                    cv2.imwrite(img_path, cropped_image)
-                #Align Image
-                image_proccessed = proccessingImage.focus_image(img_path)
-
-                #Get OCR
-                information = ocr.predict(image_proccessed)
-
-                try:
-                    print("Information:\n")
-                    for field, value in information.items():
-                        print(f"{field}: {value}\n")
-                except Exception as e:
-                    print(information)
-
-            except Exception as e:
-                print(f"Error: {e}")
-
-        cv2.imshow("Frame", frame)
-
-        if cv2.waitKey(1) == ord('q'):
-            break
+from app.utils.threading import CameraThread
+class Camera:
+    def __init__(self, skip_frame=30):
+        self.root = os.getcwd()
+        self.cameraThread = CameraThread()
+        self.cap = None
+        self.frame_count = 0
+        self.skip = skip_frame
+        self.mainui = load_ui.loadUi("app/resources/main.ui")
+        self.mainui.show()
         
-    cam.release()
-    cv2.destroyAllWindows()
+        self.cameraThread.result_signal.connect(self.handle_result)
+        self.mainui.StartCamera.clicked.connect(self.start_camera)
+        self.mainui.StopCamera.clicked.connect(self.stop_camera)
+        
+        self.video_label = self.mainui.CameraDisplay
+        self.video_label.setScaledContents(True)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+
+    def start_camera(self):
+        if self.cap is None or not self.cap.isOpened():
+            self.cap = cv2.VideoCapture(0)
+            self.frame_count = 0
+
+        if not self.timer.isActive():
+            self.timer.start(30)
+    def update_frame(self):
+        ret, frame = self.cap.read()
+
+        if ret:
+            self.frame_count+=1
+            if self.frame_count % self.skip == 0:
+                if not self.cameraThread.isRunning():
+                    self.cameraThread.set_frame(frame.copy())
+                    self.cameraThread.start()
+            
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            h, w, c = frame.shape
+            bytes_per_line = c * w
+            q_img = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+            self.video_label.setPixmap(QPixmap.fromImage(q_img))
+            self.video_label.repaint()
+
+    def handle_result(self, data):
+        if data["status"] == "No detection":
+            print("No detection")
+        elif data["status"] == "Successfully":
+            print(data["information"])
+        else:
+            print(data["status"])
+
+    def stop_camera(self):
+        self.timer.stop()
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+        self.video_label.clear()
+
+        if self.cameraThread.isRunning():
+            self.cameraThread.terminate()
 
 if __name__ == "__main__":
-    main()
+    app = QApplication([])
+    main = Camera()
+    app.exec()

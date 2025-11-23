@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 class ProccessingImage:
     def __init__(self):
@@ -129,10 +128,3 @@ if __name__ == "__main__":
     image = cv2.imread(r"temp\temp.jpg")
     processingImage = ProccessingImage()
     cropped_image = processingImage.focus_image(r"temp\temp.jpg")
-    # processingImage.draw_line(image, top_line, (0, 255, 0))    # Xanh lá
-    # processingImage.draw_line(image, bottom_line, (0, 255, 0)) # Xanh lá
-    # processingImage.draw_line(image, left_line, (255, 0, 0))   # Xanh dương
-    # processingImage.draw_line(image, right_line, (255, 0, 0))  # Xanh dương
-
-    plt.imshow(cropped_image)
-    plt.show()

@@ -8,7 +8,6 @@ from torch import optim
 from app.detector.ctpn.ctpn import CTPN_Model, RPN_CLS_Loss, RPN_REGR_Loss
 from app.detector.ctpn.dataset import VOCDataset
 from app.detector.ctpn import config
-# import visdom
 
 random_seed = 2019
 torch.random.manual_seed(random_seed)
@@ -106,14 +105,6 @@ if __name__ == '__main__':
                     'batch: loss_cls:{:.4f}--loss_regr:{:.4f}--loss:{:.4f}\n'.format(loss_cls.item(), loss_regr.item(), loss.item()),
                     'epoch: loss_cls:{:.4f}--loss_regr:{:.4f}--loss:{:.4f}\n'.format(epoch_loss_cls/mmp, epoch_loss_regr/mmp, epoch_loss/mmp)
                 )
-            # if mmp % 100 == 0:
-            #     viz.line(Y=np.array([epoch_loss_cls/mmp]), X=np.array([n_iter//100]), 
-            #                         update='append', win='loss_cls', opts={'title':'loss_cls'})
-            #     viz.line(Y=np.array([epoch_loss_regr/mmp]), X=np.array([n_iter//100]), 
-            #                         update='append', win='loss_regr', opts={'title':'loss_regr'})
-            #     viz.line(Y=np.array([epoch_loss/mmp]), X=np.array([n_iter//100]), 
-            #                         update='append', win='loss_all', opts={'title':'loss_all'})
-
         
         epoch_loss_cls /= epoch_size
         epoch_loss_regr /= epoch_size
