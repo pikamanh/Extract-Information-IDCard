@@ -47,7 +47,7 @@ class CameraThread(QThread):
             results = self.model_yolo.predict(self.frame_to_proccess, conf=0.8, device=self.device)
 
             if not results or len(results[0].boxes) == 0:
-                self.result_signal.emit({"status": "No detection."})
+                self.result_signal.emit({"status": "No detection"})
                 return
             
             result = results[0]
