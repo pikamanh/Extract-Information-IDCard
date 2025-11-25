@@ -69,6 +69,15 @@ class Camera:
 
         self.information_label = self.mainui.DisplayInformation
 
+        self.id_label = self.mainui.IDLabel
+        self.name_label = self.mainui.NameLabel
+        self.dob_label = self.mainui.DOBLabel
+        self.gender_label = self.mainui.GenderLabel
+        self.nationality_label = self.mainui.NationalityLabel
+        self.POO_label = self.mainui.POOLabel
+        self.POR_label = self.mainui.PORLabel
+        self.DOE_label = self.mainui.DOELabel
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
 
@@ -88,12 +97,14 @@ class Camera:
                 if not self.cameraThread.isRunning():
                     self.cameraThread.set_frame(frame.copy())
                     self.cameraThread.start()
-            
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            h, w, c = frame.shape
+            display_frame = cv2.resize(frame, (640, 480))
+            
+            display_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
+
+            h, w, c = display_frame.shape
             bytes_per_line = c * w
-            q_img = QImage(frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+            q_img = QImage(display_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
             self.video_label.setPixmap(QPixmap.fromImage(q_img))
             self.video_label.repaint()
 
@@ -102,11 +113,43 @@ class Camera:
             self.information_label.setText("No detection")
             print("No detection")
         elif data["status"] == "Successfully":
-            self.information_label.setText("Scanning Successfully")
+            self.set_information(data['information'])
             print(data["information"])
         else:
             self.information_label.setText("Error")
             print(data["status"])
+
+    def set_information(self, information:dict):
+        try:
+            id = information['id_number']
+            name = information['name']
+            dob = information['dob']
+            gender = information['gender']
+            nationality = information['national']
+            place_of_origin = information['place_orgin']
+            place_of_residence = f"{information['place_of_residence1']}, {information['place_of_residence2']}"
+            date_of_expiry = information['date_expired']
+
+            is_valid_id = len(id) in [9, 12]
+            is_valid_gender = gender in ['Nam', 'Nữ']
+            check_date = lambda d: len(d) == 10 and d[2] == '/' and d[5] == '/'
+
+            if is_valid_id and is_valid_gender and check_date(dob) and check_date(date_of_expiry):
+                self.information_label.setText("Scanning Successfully")
+                self.id_label.setText(id)
+                self.name_label.setText(name)
+                self.dob_label.setText(dob)
+                self.gender_label.setText(gender)
+                self.nationality_label.setText(nationality)
+                self.POO_label.setText(place_of_origin)
+                self.POR_label.setText(place_of_residence)
+                self.DOE_label.setText(date_of_expiry)
+
+                self.stop_camera()
+
+            self.information_label.setText("Please try again")
+        except Exception as e:
+            self.information_label.setText("Please try again")
 
     def stop_camera(self):
         self.timer.stop()

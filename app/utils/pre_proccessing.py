@@ -65,7 +65,7 @@ class ProccessingImage:
         img = cv2.imread(img_path)
 
         rotated_image = self.rotate_image(img)
-        canny = cv2.Canny(rotated_image, 50, 150)
+        canny = cv2.Canny(rotated_image, 70, 150)
         lines = cv2.HoughLines(canny, 1, np.pi/180, 180)
 
         # return rotated_image
