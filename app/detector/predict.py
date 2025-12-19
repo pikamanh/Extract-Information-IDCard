@@ -10,7 +10,7 @@ from app.detector.ctpn.utils import gen_anchor, transform_bbox, clip_bbox, filte
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-weights = 'model/new.pth'
+weights = 'model/new 2.pth'
 model = CTPN_Model().to(device)
 model.load_state_dict(torch.load(weights, map_location=device)['model_state_dict'])
 model.eval()
