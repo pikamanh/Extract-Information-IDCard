@@ -40,7 +40,6 @@ class OCR:
 
         corner_list = np.array(corner_list)
         corner_list = corner_list[corner_list[:, 1].argsort()]
-        print(corner_list)
 
         for key, value in zip(rois.keys(), corner_list):
             x1 = value[0].item()
